@@ -1,0 +1,30 @@
+{
+  "name": "infrontjs-examples",
+  "version": "1.0.0",
+  "description": "Official InfrontJS examples",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build" : "copy-and-watch examples/**/* build/**/* dist/ --clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/infrontjs/examples.git"
+  },
+  "keywords": [
+    "infrontjs",
+    "examples"
+  ],
+  "author": "benny!",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/infrontjs/examples/issues"
+  },
+  "homepage": "https://github.com/infrontjs/examples#readme",
+  "devDependencies": {
+    "copy-and-watch": "^0.1.6"
+  }
+}
