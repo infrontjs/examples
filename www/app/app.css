@@ -14,3 +14,15 @@ code[class*="language-"], pre[class*="language-"]
 .token.atrule, .token.attr-value, .token.keyword {
     color: #591294;
 }
+
+.btn-primary:hover {
+    color: #fff!important;
+    background-color: #290064;
+    border-color: #290064;
+}
+.btn-primary {
+    color: #fff;
+    background-color: #290064;
+    border-color: #290064;
+    border-radius: 8px;
+}

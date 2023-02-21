@@ -3,6 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <title>02 - ToDo App</title>
+  <style>
+    body {
+      font-family: "Open Sans", sans-serif;
+      font-weight: 400;
+      line-height: 1.4;
+      color: #212529;
+      text-align: left;
+      padding: 32px;
+    }
+    input {
+      padding: 0.375rem 0.75rem;
+      font-size: 1rem;
+      line-height: 1.4;
+      color: #708198;
+      background-color: #edeff2;
+      background-clip: padding-box;
+      border: 0 solid #ced4da;
+      border-radius: 0.5rem;
+    }
+    button {
+      color: white;
+      font-size: .95rem;
+      padding: 0.6rem 1.5rem;
+      box-shadow: 0 3px 5px rgb(0 9 128 / 5%), 0 4px 10px rgb(0 9 128 / 4%), inset 0 1px 1px rgb(255 255 255 / 10%), inset 0 -1px 1px rgb(0 0 0 / 8%);
+      text-transform: uppercase;
+      letter-spacing: .03rem;
+      background: linear-gradient(45deg, #19d9b4 0%, #92d275 100%);
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: middle;
+      user-select: none;
+      border: 0 solid transparent;
+      line-height: 1.4;
+      border-radius: 50rem;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 2rem;
+    }
+    li {
+      position: relative;
+      padding-left: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.05rem;
+      color: #414c5a;
+    }
+    li:before {
+      content: '\00BB';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      line-height: 1;
+      margin-top: -0.6rem;
+    }
+  </style>
 </head>
 <body>
 
