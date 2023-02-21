@@ -7,7 +7,7 @@
     "example": "examples"
   },
   "scripts": {
-    "build" : "copy-and-watch examples/**/* www/**/* dist/ --clean",
+    "build": "node build.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/infrontjs/examples#readme",
   "devDependencies": {
-    "copy-and-watch": "^0.1.6"
+    "ejs": "^3.1.8",
+    "fs-extra": "^11.1.0"
   }
 }

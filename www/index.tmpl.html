@@ -77,33 +77,39 @@
 
         <div class="row ui-blog-grid">
 
-          <div class="col-lg-4">
-            <div class="ui-card post-item ui-action-card shadow-sm"
-                 data-target="./01-most-minimal/">
+          <% for ( let ei = 0; ei < examples.length; ei++ ) { %>
 
-              <div class="card-image"
-                   data-bg="assets/img/blog/applify-blog.jpg"
-                   data-uhd=""
-                   style="background-image: url(&quot;assets/img/blog/applify-blog.jpg&quot;);"></div>
+            <div class="col-lg-4">
+              <div class="ui-card post-item ui-action-card shadow-sm"
+                   data-target="./<%= examples[ ei ].directory %>/">
 
-              <div class="card-header">
-                <h4 class="heading">Most Minimal</h4>
-                <small class="post-date">Example #01</small>
-              </div>
+                <div class="card-image"
+                     data-bg="./<%= examples[ ei ].directory %>/screenshot.png"
+                     data-uhd=""
+                     style="background-image: url(./<%= examples[ ei ].directory %>/screenshot.png);"></div>
 
-              <div class="card-body ui-turncate-text">
-                <p>
-                  The very first example shows the most minimal InfrontJS application. It's a shameless plug ;-)
-                </p>
-              </div>
+                <div class="card-header">
+                  <h4 class="heading"><%= examples[ ei ].title %></h4>
+                  <small class="post-date">Example #0<%= (ei+1) %></small>
+                </div>
 
-              <div class="card-footer">
-                <div class="post-meta">
-                  <button class="btn btn-block">VIEW</button>
+                <div class="card-body ui-turncate-text">
+                  <p>
+                    <%= examples[ ei ].desc %>
+                  </p>
+                </div>
+
+                <div class="card-footer">
+                  <div class="post-meta">
+                    <button class="btn btn-block">VIEW</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+
+          <% }  %>
+
+          <!--
 
           <div class="col-lg-4">
             <div class="ui-card post-item ui-action-card shadow-sm"
@@ -132,7 +138,7 @@
               </div>
             </div>
           </div>
-
+-->
         </div>
 
 
