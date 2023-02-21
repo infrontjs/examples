@@ -1,0 +1,16 @@
+.ui-blog-grid {
+    margin-top: 48px;
+}
+
+h2.heading {
+    margin-bottom: 1.75rem;
+}
+code[class*="language-"], pre[class*="language-"]
+{
+    color: #290064;
+    font-weight: normal;
+}
+
+.token.atrule, .token.attr-value, .token.keyword {
+    color: #591294;
+}

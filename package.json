@@ -7,7 +7,7 @@
     "example": "examples"
   },
   "scripts": {
-    "build" : "copy-and-watch examples/**/* build/**/* dist/ --clean",
+    "build" : "copy-and-watch examples/**/* www/**/* dist/ --clean",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

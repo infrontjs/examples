@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>02 - ToDo App</title>
+</head>
+<body>
+
+<!-- App container -->
+<div id="app"></div>
+
+<!-- Include InfrontJS library via unpkg -->
+<script src="https://unpkg.com/infrontjs@0.9.30/dist/IF.js"></script>
+<script type="module">
+  // Create Main State which includes all the application logic
+  class MainState extends IF.State
+  {
+    // Declare this as default state
+    static ROUTE = '/';
+
+    // The template as native as possible to standard HTML
+    static TMPL = `
+            <input type="text" id="new-todo" />
+            <button type="button" id="btn-add">Add</button>
+            <ul>
+                <% for ( i = 0; i < todos.length; i++ ) {   %>
+                    <li><%= todos[ i ] %></li>
+                <% }    %>
+            </ul>
+        `;
+
+    enter()
+    {
+      // Our todo list as an simple array of strings
+      this.todos = [];
+
+      // Add action, no automatic data-binding hence no magic or black box
+      this.app.container.addEventListener( 'click', (e) => {
+        if ( !e.target.matches( '#btn-add' ) ) return;
+        this.todos.push( this.app.container.querySelector( '#new-todo' ).value );
+        this.app.container.querySelector( '#new-todo' ).value = "";
+        this.render();
+      });
+
+      // Initial rendering
+      this.render();
+    }
+
+    render()
+    {
+      // Optimized rendering using DOM diffing
+      this.app.templateManager.render( this.app.container, MainState.TMPL, { todos : this.todos } );
+    }
+  }
+
+  // Creating the InfrontJS application and adding the MainState
+  const myApp = new IF.App( document.getElementById( 'app' ) );
+  myApp.stateManager.add( MainState );
+  myApp.run();
+
+</script>
+
+</body>
+</html>
