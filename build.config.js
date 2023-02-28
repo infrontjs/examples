@@ -1,5 +1,5 @@
 module.exports = {
-    ifversion : "0.9.31",
+    ifversion : "0.9.4",
     examples : [
         {
             directory : '01-most-minimal',
@@ -50,13 +50,13 @@ module.exports = {
                 '    render()\n' +
                 '    {\n' +
                 '      // Optimized rendering using DOM diffing\n' +
-                '      this.app.templateManager.render( this.app.container, MainState.TMPL, { todos : this.todos } );\n' +
+                '      this.app.view.render( this.app.container, MainState.TMPL, { todos : this.todos } );\n' +
                 '    }\n' +
                 '  }\n' +
                 '\n' +
                 '  // Creating the InfrontJS application and adding the MainState\n' +
                 '  const myApp = new IF.App( document.getElementById( \'app\' ) );\n' +
-                '  myApp.stateManager.add( MainState );\n' +
+                '  myApp.states.add( MainState );\n' +
                 '  myApp.run();'
         }
     ]
