@@ -21,6 +21,12 @@ Build online version locally:
 The following examples are planned to be released soon.
 
 - Example on States and Routes
-- Exmaple using templates with help of the TemplateManager class
+- Exmaple using templates with help of the View class
 - Example on how to work with native Web Component 
 - Full feature example of a standard SaaS application
+
+
+--- Update readme like infrontjs-readme
+--- Add CodeOfConduct
+-- remove server path from workflow
+-- add local if library to ./if.js
