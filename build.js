@@ -1,5 +1,6 @@
 const fs = require( "fs" );
 const fse = require('fs-extra');
+const parse = require( 'node-html-parser' ).parse;
 
 const ejs = require( 'ejs' );
 
@@ -35,6 +36,9 @@ fse.copySync( 'examples', './dist' );
 fs.writeFileSync(  './dist/index.html', mainTemplate( { examples : cfg.examples } ) );
 for ( let ei = 0; ei < examples.length; ei++ )
 {
+    let html = fs.readFileSync( './dist/' + examples[ ei ].directory + '/example.html' );
+    let root = parse( html );
+    examples[ ei ].source = root.querySelector( 'script[type="module"]').text;
     fs.writeFileSync( './dist/' + examples[ ei ].directory + '/index.html', exampleTemplate( { e : examples[ ei ] } ) );
 }
 

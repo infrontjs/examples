@@ -61,6 +61,16 @@
       line-height: 1;
       margin-top: -0.6rem;
     }
+    .invalid-input {
+      animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+      40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
   </style>
 </head>
 <body>
@@ -69,7 +79,7 @@
 <div id="app"></div>
 
 <!-- Include InfrontJS library via unpkg -->
-<script src="https://unpkg.com/infrontjs@0.9.4/dist/IF.js"></script>
+<script src="./../IF.js"></script>
 <script type="module">
   // Create Main State which includes all the application logic
   class MainState extends IF.State
@@ -96,9 +106,15 @@
       // Add action, no automatic data-binding hence no magic or black box
       this.app.container.addEventListener( 'click', (e) => {
         if ( !e.target.matches( '#btn-add' ) ) return;
-        this.todos.push( this.app.container.querySelector( '#new-todo' ).value );
-        this.app.container.querySelector( '#new-todo' ).value = "";
-        this.render();
+        const input = this.app.container.querySelector( '#new-todo' );
+        input.classList.remove("invalid-input" );
+        if ( input.value === "" ) {
+          setTimeout( () => input.classList.add("invalid-input" ), 10 );
+        } else {
+          this.todos.push( input.value );
+          input.value = "";
+          this.render();
+        }
       });
 
       // Initial rendering
@@ -116,7 +132,6 @@
   const myApp = new IF.App( document.getElementById( 'app' ) );
   myApp.states.add( MainState );
   myApp.run();
-
 </script>
 
 </body>
