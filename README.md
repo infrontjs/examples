@@ -1,10 +1,12 @@
-# InfrontJS examples
+![InfrontJS logo](https://www.infrontjs.com/assets/ext/ifjs-colored-bg-logo.png)
+
+# InfrontJS - Official Examples
 
 Learning by example is always a good choice. This is the official InfrontJS examples repository.
 
 Feel free to browse through the example codes.
 
-### [View examples online](https://examples.infrontjs.com)
+### [View Online](https://examples.infrontjs.com) &middot; [Homepage](https://www.infrontjs.com) &middot; [ApiDocs](https://apidocs.infrontjs.com) &middot; [Twitter](https://twitter.com/infrontjs)
 
 _Note: All examples importing InfrontJS library via unpkg.com service._
 
@@ -25,8 +27,10 @@ The following examples are planned to be released soon.
 - Example on how to work with native Web Component 
 - Full feature example of a standard SaaS application
 
+## Contributing
 
---- Update readme like infrontjs-readme
---- Add CodeOfConduct
--- remove server path from workflow
--- add local if library to ./if.js
+By contributing or commenting on issues in this repository, whether you've read them or not, you're agreeing to the [Contributor Code of Conduct](CODE-OF-CONDUCT.md). Much like traffic laws, ignorance doesn't grant you immunity.
+
+## License
+
+This content is released under the (http://opensource.org/licenses/MIT) MIT License.
