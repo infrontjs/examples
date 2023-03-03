@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>03 - View and templates</title>
+  <style>
+    body {
+      font-family: "Courier New", sans-serif;
+      font-weight: 400;
+      line-height: 1.4;
+      color: green;
+      text-align: left;
+      padding: 32px;
+      background-color: black;
+    }
+    p {
+      margin: 24px 0;
+    }
+    span {
+      background-color: green;
+      color: black;
+      padding: 6px;
+    }
+    hr {
+      border-color: green;
+    }
+  </style>
+</head>
+<body>
+
+<!-- App container -->
+<div id="app"></div>
+
+<!-- Include InfrontJS library via unpkg -->
+<script src="./../IF.js"></script>
+<script type="module">
+  // Create states
+  class ExampleState extends IF.State
+  {
+    static INLINE_TEMPLATE = `
+    <h1>Hello InfrontJS World!</h1>
+    <p>The tempalte below is rendered every second. Using DOM diffing only DOM changes are applied. Start the video and you see that it is playing continuously.</p>
+    <hr />
+    <div id="innerContainer">
+    <p>LOADING....</p>
+    </div>
+    `;
+    async enter()
+    {
+      this.loadedTemplate = await this.app.view.load( './inner-template.html' );
+      this.app.view.render(
+              this.app.container,
+              ExampleState.INLINE_TEMPLATE,
+              {
+                urlToPasswordState : this.app.router.createUrl( 'password' )
+              }
+      );
+      this.counter = 0;
+
+      // Extend loading sequence a bit
+      setInterval( this.renderInnerTemplate.bind( this ), 1000 );
+    }
+
+    renderInnerTemplate()
+    {
+      this.counter++;
+      this.app.view.render(
+              this.app.container.querySelector( '#innerContainer' ),
+              this.loadedTemplate,
+              {
+                text : 'Crappo',
+                counter : this.counter
+              }
+      );
+    }
+  }
+
+  // Creating the InfrontJS application and adding the MainState
+  const myApp = new IF.App( document.getElementById( 'app' ) );
+  myApp.states.add( ExampleState );
+  myApp.run();
+</script>
+
+</body>
+</html>
