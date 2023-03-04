@@ -24,6 +24,8 @@ The following examples are planned to be released soon.
 - Example on how to work with native Web Component 
 - Full feature example of a standard SaaS application
 
+Do you miss an example? Just drop us a line!
+
 ## Contributing
 
 By contributing or commenting on issues in this repository, whether you've read them or not, you're agreeing to the [Contributor Code of Conduct](CODE-OF-CONDUCT.md). Much like traffic laws, ignorance doesn't grant you immunity.

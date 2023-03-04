@@ -3,15 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>03 - States And Routes</title>
+  <title>04 - States And Routes</title>
   <style>
     body {
       font-family: "Open Sans", sans-serif;
       font-weight: 400;
       line-height: 1.4;
-      color: #212529;
+      color: #ffffff;
+      background-color: #212529;
       text-align: left;
       padding: 32px;
+    }
+    a, a:hover, a:visited, a:active, button, input {
+      background-color: white;
+      color: #212529;
+      padding: 12px 24px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-right: 12px;
+    }
+
+    input {
+      margin-right: 12px;
     }
   </style>
 </head>
@@ -23,14 +36,15 @@
 <!-- Include InfrontJS library via unpkg -->
 <script src="./../IF.js"></script>
 <script type="module">
-  // Create states
+
+  // IntroState is the default state (ie. entry point)
   class IntroState extends IF.State
   {
     static ROUTE = '/';
 
     static TEMPLATE = `
-    <h1>Hello, try to enter</h1>
-    <a href="<%= urlToPasswordState %>">CONTINUE...</a>
+    <h1>Hello!</h1>
+    <a href="<%= urlToPasswordState %>">NEXT ›</a>
     `;
     async enter()
     {
@@ -38,61 +52,70 @@
               this.app.container,
               IntroState.TEMPLATE,
               {
-                urlToPasswordState : this.app.router.createUrl( 'password' )
+                urlToPasswordState : this.app.router.createUrl( 'question' )
               }
       );
     }
-
-    async exit()
-    {
-      this.app.view.render( this.app.container, '' );
-    }
   }
 
-  class PasswordState extends IF.State
+  // QuestionState asks for the name and calls WelcomeState with parameter
+  class QuestionState extends IF.State
   {
-    static ROUTE = 'password';
+    static ROUTE = 'question';
     async enter()
     {
-      const pw = prompt( "Enter password (Hint: try 'secret')" );
-      this.app.router.redirect( this.app.router.createUrl( 'secret/' + pw) );
+      const container = this.app.container;
+      this.app.view.render(
+              container,
+              '<h1>Please, tell me your name.</h1><input placeholder="Your name"/><button>NEXT ›</button>'
+      );
+      container.querySelector( 'button' ).addEventListener( 'click', () => {
+        const name = IF.Helper.trim( container.querySelector( 'input' ).value );
+        this.app.router.redirect( this.app.router.createUrl( 'welcome/' + ( name.length ? name : 'Stranger' ) ) );
+      }, { once : true } );
     }
   }
 
-  class SecretState extends IF.State
+  // WelcomeState accepts requires 'name' as parameter and outputs it
+  class WelcomeState extends IF.State
   {
-    static ROUTE = 'secret/:password'
+    static ROUTE = 'welcome/:name'
 
+    async enter()
+    {
+      this.app.view.render(
+        this.app.container,
+        '<h1>Nice to meet you, <%= name %>!</h1><a href="<%= urlToForbiddenState %>">FORBIDDEN STATE ›</a><a href="<%= urlToIntroState %>">HOME ›</a>',
+        {
+          name : this.routeParams.getParam( 'name', 'Stranger' ),
+          urlToForbiddenState : this.app.router.createUrl( ForbiddenState.ROUTE ),
+          urlToIntroState : this.app.router.createUrl( IntroState.ROUTE )
+        }
+      );
+    }
+  }
+
+  // ForbiddenState demonstrate the canEnter() function of each State.
+  class ForbiddenState extends IF.State
+  {
+    static ROUTE = 'forbidden';
+
+    // canEnter() is called before the State.enter function is triggered by IF.States logic
     canEnter()
     {
-      return ( 'test' === this.getParam( 'password' ) );
+      alert( "Access Denied!" );
+      return false;
     }
 
+    // If IF.State.canEnter() returns false - this function is called to resolve the url to redirect to
     getRedirectUrl()
     {
-      return this.app.router.createUrl( 'denied' );
-    }
-
-    async enter()
-    {
-      alert( "Hello User!" );
+      return this.app.router.createUrl( IntroState.ROUTE);
     }
   }
 
-  class DeniedState extends IF.State
-  {
-    static ROUTE = 'denied';
-
-    async enter()
-    {
-      alert( "Access Denied." );
-      this.app.router.redirect( "/" );
-    }
-  }
-
-  // Creating the InfrontJS application and adding the MainState
   const myApp = new IF.App( document.getElementById( 'app' ) );
-  myApp.states.add( IntroState, PasswordState, SecretState, DeniedState );
+  myApp.states.add( IntroState, QuestionState, WelcomeState, ForbiddenState );
   myApp.run();
 </script>
 

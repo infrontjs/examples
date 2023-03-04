@@ -26,3 +26,8 @@ code[class*="language-"], pre[class*="language-"]
     border-color: #290064;
     border-radius: 8px;
 }
+
+
+.section .section-heading .paragraph {
+    display: block;
+}
