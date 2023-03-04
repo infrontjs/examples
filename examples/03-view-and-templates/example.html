@@ -11,11 +11,11 @@
       line-height: 1.4;
       color: green;
       text-align: left;
-      padding: 32px;
+      padding: 12px;
       background-color: black;
     }
     p {
-      margin: 24px 0;
+      margin: 12px 0;
     }
     span {
       background-color: green;
@@ -24,6 +24,24 @@
     }
     hr {
       border-color: green;
+    }
+    #loading {
+      margin-top: 12px;
+      display: inline-block;
+      width: 25px;
+      height: 25px;
+      border: 3px solid rgba(0,255,0,.3);
+      border-radius: 50%;
+      border-top-color: #4a4;
+      animation: spin .6s ease-in-out infinite;
+      -webkit-animation: spin .6s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { -webkit-transform: rotate(360deg); }
+    }
+    @-webkit-keyframes spin {
+      to { -webkit-transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -35,15 +53,15 @@
 <!-- Include InfrontJS library via unpkg -->
 <script src="./../IF.js"></script>
 <script type="module">
-  // Create states
   class ExampleState extends IF.State
   {
     static INLINE_TEMPLATE = `
     <h1>Hello InfrontJS World!</h1>
-    <p>The tempalte below is rendered every second. Using DOM diffing only DOM changes are applied. Start the video and you see that it is playing continuously.</p>
+    <p>The tempalte below is rendered every second. Using DOM diffing only DOM changes are applied.</p>
+    <p><u>Instruction:</u> Start the video. You will notice that it is playing continuously altough the render call get called every second.</p>
     <hr />
     <div id="innerContainer">
-    <p>LOADING....</p>
+        <div id="loading"></div>
     </div>
     `;
     async enter()
@@ -51,32 +69,25 @@
       this.loadedTemplate = await this.app.view.load( './inner-template.html' );
       this.app.view.render(
               this.app.container,
-              ExampleState.INLINE_TEMPLATE,
-              {
-                urlToPasswordState : this.app.router.createUrl( 'password' )
-              }
+              ExampleState.INLINE_TEMPLATE
       );
       this.counter = 0;
 
-      // Extend loading sequence a bit
       setInterval( this.renderInnerTemplate.bind( this ), 1000 );
     }
 
     renderInnerTemplate()
     {
-      this.counter++;
       this.app.view.render(
               this.app.container.querySelector( '#innerContainer' ),
               this.loadedTemplate,
               {
-                text : 'Crappo',
-                counter : this.counter
+                counter : ++this.counter
               }
       );
     }
   }
 
-  // Creating the InfrontJS application and adding the MainState
   const myApp = new IF.App( document.getElementById( 'app' ) );
   myApp.states.add( ExampleState );
   myApp.run();

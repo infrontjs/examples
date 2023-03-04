@@ -8,8 +8,6 @@ Feel free to browse through the example codes.
 
 ### [View Online](https://examples.infrontjs.com) &middot; [Homepage](https://www.infrontjs.com) &middot; [ApiDocs](https://apidocs.infrontjs.com) &middot; [Twitter](https://twitter.com/infrontjs)
 
-_Note: All examples importing InfrontJS library via unpkg.com service._
-
 ## Build
 
 Build online version locally:
@@ -23,7 +21,6 @@ Build online version locally:
 The following examples are planned to be released soon.
 
 - Example on States and Routes
-- Exmaple using templates with help of the View class
 - Example on how to work with native Web Component 
 - Full feature example of a standard SaaS application
 
