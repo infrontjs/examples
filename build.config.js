@@ -14,6 +14,11 @@ module.exports = {
             directory : '03-view-and-templates',
             title : 'View & Templates',
             desc : 'Learn how to use the view class to render templates and see DOM diffing in action.'
+        },
+        {
+            directory : '04-states-and-routes',
+            title : 'States & Routes',
+            desc : 'Made-up example demonstrating the core concepts of InfrontJS\' States and Routes.'
         }
     ]
 };
