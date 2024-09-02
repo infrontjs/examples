@@ -114,7 +114,10 @@
     }
   }
 
-  const myApp = new IF.App( document.getElementById( 'app' ) );
+  // Settings for example environment
+  const appSettings = { router : { basePath : "/04-states-and-routes/" } };
+
+  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
   myApp.states.add( IntroState, QuestionState, WelcomeState, ForbiddenState );
   myApp.run();
 </script>

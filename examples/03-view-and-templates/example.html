@@ -57,8 +57,10 @@
   {
     static INLINE_TEMPLATE = `
     <h1>Hello InfrontJS World!</h1>
-    <p>The tempalte below is rendered every second. Using DOM diffing only DOM changes are applied.</p>
-    <p><u>Instruction:</u> Start the video. You will notice that it is playing continuously altough the render call get called every second.</p>
+    <p>InfrontJS templating logic is realized by the great <a href="https://ejs.co/" target="_blank">EJS library</a>.</p>
+    <p>InfrontJS adds some minimal functions for formatting dates, numbers as well as localization.</p>
+    <p>Number: <%= _lcn( 12345679 ) %></p>
+    <p>Date: <%= _lcd( new Date() ) %></p>
     <hr />
     <div id="innerContainer">
         <div id="loading"></div>
@@ -66,12 +68,12 @@
     `;
     async enter()
     {
-      this.loadedTemplate = await this.app.view.load( './inner-template.html' );
+      this.simpleTemplate = 'Count #<%= _lcn( counter, { maximumFractionDigits: 0 } ); %>';
       this.app.view.render(
               this.app.container,
               ExampleState.INLINE_TEMPLATE
       );
-      this.counter = 0;
+      this.counter = 990;
 
       setInterval( this.renderInnerTemplate.bind( this ), 1000 );
     }
@@ -80,7 +82,7 @@
     {
       this.app.view.render(
               this.app.container.querySelector( '#innerContainer' ),
-              this.loadedTemplate,
+              this.simpleTemplate,
               {
                 counter : ++this.counter
               }
@@ -88,7 +90,10 @@
     }
   }
 
-  const myApp = new IF.App( document.getElementById( 'app' ) );
+  // Settings for example environment
+  const appSettings = { router : { basePath : "/03-view-and-templates/" } };
+
+  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
   myApp.states.add( ExampleState );
   myApp.run();
 </script>

@@ -19,8 +19,12 @@
 <!-- Include InfrontJS library via unpkg -->
 <script src="./../IF.js"></script>
 <script type="module">
+  // Settings for example environment
+  const container = null;
+  const appSettings = { router : { basePath : "/01-most-minimal/" } };
+
   // Most minimal InfrontJS app showing the default scene (aka shameless plug)
-  const myApp = new IF.App();
+  const myApp = new IF.App( container, appSettings );
   myApp.run();
 </script>
 
