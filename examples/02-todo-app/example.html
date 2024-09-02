@@ -128,8 +128,11 @@
     }
   }
 
+  // Settings for example environment
+  const appSettings = { router : { basePath : "/02-todo-app/" } };
+
   // Creating the InfrontJS application and adding the MainState
-  const myApp = new IF.App( document.getElementById( 'app' ) );
+  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
   myApp.states.add( MainState );
   myApp.run();
 </script>

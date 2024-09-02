@@ -13,7 +13,7 @@ module.exports = {
         {
             directory : '03-view-and-templates',
             title : 'View & Templates',
-            desc : 'Learn how to use the view class to render templates and see DOM diffing in action.'
+            desc : 'Learn how to use the view class to render ejs compatible templates.'
         },
         {
             directory : '04-states-and-routes',
