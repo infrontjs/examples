@@ -942,6 +942,7 @@
 		 */
 		static serializeForm( form )
 		{
+			// todo - check for disabled form elements which cannot be resolved and show an info/warning
 			const object = {};
 			new FormData( form ).forEach(( value, key) =>
 			{
@@ -1039,6 +1040,41 @@
 		static isClass( v )
 		{
 			return typeof v === 'function' && /^\s*class\s+/.test(v.toString());
+		}
+
+		/**
+		 * Deep merges two objects into target
+		 *
+		 * @param {Object} target
+		 * @param {Object} sources
+		 * @return {Object}
+		 * @example
+		 *
+		 * const merged = mergeDeep({a: 1}, { b : { c: { d: { e: 12345}}}});
+		 * // => { a: 1, b: { c: { d: [Object] } } }
+		 */
+		static deepMerge( target, ...sources )
+		{
+			if (!sources.length) return target;
+			const source = sources.shift();
+
+			if ( Helper.isPlainObject( target ) && Helper.isPlainObject( source ) )
+			{
+				for ( const key in source )
+				{
+					if ( Helper.isPlainObject( source[ key ] ) )
+					{
+						if ( !target[ key ] ) Object.assign( target, { [key]: {} } );
+						Helper.deepMerge( target[ key ], source[ key ] );
+					}
+					else
+					{
+						Object.assign( target, { [key]: source[key] });
+					}
+				}
+			}
+
+			return Helper.deepMerge( target, ...sources );
 		}
 
 		/**
@@ -1266,7 +1302,7 @@ void main()
 	 * States - The state manager.
 	 * You can create multiple States instances in your application logic, e.g. for dealing with sub-states etc.
 	 */
-	class States
+	class StateManager
 	{
 		static DEFAULT_INDEX_STATE_ID = 'INFRONT_DEFAULT_INDEX_STATE';
 		static DEFAULT_NOT_FOUND_STATE_ID = 'INFRONT_DEFAULT_NOTFOUND_STATE';
@@ -1277,10 +1313,35 @@ void main()
 		 */
 		constructor( appInstance )
 		{
-			this._states =  {};
 			this.app = appInstance;
-			this.currentState = null;
-			this.stateNotFoundClass = null;
+			this._states =  {};
+			this._currentState = null;
+			this._stateNotFoundClass = this.app ? this.app.config.get( 'stateManager.notFoundState' ) : null;
+		}
+
+		set currentState( currentState )
+		{
+			this._currentState = currentState;
+		}
+
+		get currentState()
+		{
+			return this._currentState;
+		}
+
+		set stateNotFoundClass( stateNotFoundClass )
+		{
+			if ( false === Helper.isClass( notFoundClass ) )
+			{
+				throw new Error( 'States.setNotFoundClass expects a class/subclass of State.' );
+			}
+
+			this._stateNotFoundClass = stateNotFoundClass;
+		}
+
+		get stateNotFoundClass()
+		{
+			return this._stateNotFoundClass;
 		}
 
 		/**
@@ -1343,10 +1404,6 @@ void main()
 			{
 				stateInstance = new this._states[ stateId ]( this.app, routeParams );
 			}
-			else if ( stateId === States.DEFAULT_INDEX_STATE_ID && true === this.app.settings.get( "states.useDefaultIndexState" ) )
-			{
-				stateInstance = new DefaultIndexState( this.app, routeParams );
-			}
 			else if ( null !== this.stateNotFoundClass )
 			{
 				stateInstance = new this.stateNotFoundClass( this.app, routeParams );
@@ -1371,27 +1428,6 @@ void main()
 		}
 
 		/**
-		 * Set the StateNotFound class
-		 *
-		 * @param {State} notFoundClass - State class used in case when a state is not found
-		 * @throws {Error} - Thrown when provided param is not of type State
-		 */
-		setStateNotFoundClass( notFoundClass )
-		{
-			if ( false === Helper.isClass( notFoundClass ) )
-			{
-				throw new Error( 'States.setNotFoundClass expects a class/subclass of State.' );
-			}
-
-			this.stateNotFoundClass = notFoundClass;
-		}
-
-		isNotFoundStateEnabled()
-		{
-			return ( this.stateNotFoundClass !== null );
-		}
-
-		/**
 		 * Switch to given state
 		 * @param {DefaultBaseState} newState - Instance of state to switch to
 		 * @throws {Error} - Throws an error if given state cannot be entered or if enter() function throws an error.
@@ -1399,6 +1435,17 @@ void main()
 		 */
 		async switchTo( newState )
 		{
+			let previousStateId = null;
+			let currentStateId = this.currentState ? this.currentState.getId() : null;
+
+			this.app.dispatchCustomEvent(
+				CustomEvents.TYPE.BEFORE_STATE_CHANGE,
+				{
+					currentStateId: currentStateId,
+					nextStateId : newState ? newState.getId() : null
+				}
+			);
+
 			if ( false === newState.canEnter() )
 			{
 				const redirectUrl = newState.getRedirectUrl();
@@ -1413,14 +1460,98 @@ void main()
 
 			if ( this.currentState )
 			{
+				previousStateId = this.currentState.getId();
 				await this.currentState.exit();
 				delete this.currentState;
 			}
 
 			this.currentState = newState;
 			await newState.enter();
+			currentStateId = this.currentState.getId();
+
+			this.app.dispatchCustomEvent(
+				CustomEvents.TYPE.AFTER_STATE_CHANGE,
+				{
+					previousStateId : previousStateId,
+					currentStateId: currentStateId
+				}
+			);
 		}
 
+	}
+
+	/**
+	 * Events
+	 * Super simple custom events
+	 *
+	 * @example
+	 * class MyClass {
+	 *   constructor() {
+	 *       this.events = new CustomEvents( this  );
+	 *   }
+	 *   start() {
+	 *       this.dispatchCustomEvent( "start", { detail: { ... } } );
+	 *   }
+	 * }
+	 *
+	 * const myInstance = new MyClass();
+	 * myInstance.addEventListener( "start", e => { ... } );
+	 *
+	 */
+	class CustomEvents
+	{
+		static get TYPE() {
+			return {
+				'READY' : 'ready',
+				'POPSTATE' : 'popstate',
+				'BEFORE_STATE_CHANGE' : 'beforeStateChange',
+				'AFTER_STATE_CHANGE' : 'afterStateChange',
+				'BEFORE_LANGUAGE_SWITCH' : 'beforeLanguageSwitch',
+				'AFTER_LANGUAGE_SWITCH' : 'afterLanguageSwitch',
+				'ON_STATE_NOT_FOUND' : 'onStateNotFound'
+			}
+		};
+
+		constructor()
+		{
+			const host = this;
+			this.proxy = document.createDocumentFragment();
+			this.proxy.host = this;
+
+			["addEventListener", "dispatchEvent", "removeEventListener"].forEach(
+				this.delegate,
+				this
+			);
+
+			host.addCustomEventListener = ( eventName, func ) =>
+			{
+				host.addEventListener( eventName, func );
+				return host;
+			};
+
+			host.removeCustomEventListener = ( eventName, func ) =>
+			{
+				host.removeEventListener( eventName, func );
+				return host;
+			};
+
+			host.dispatchCustomEvent = ( eventName, optionsDetail = null ) =>
+			{
+				host.dispatchEvent(
+					new CustomEvent(
+						eventName,
+						{
+							"detail": optionsDetail
+						}
+					)
+				);
+			};
+		}
+
+		delegate( method )
+		{
+			this.proxy.host[method] = this.proxy[method].bind(this.proxy);
+		}
 	}
 
 	const UrlPattern = new UP();
@@ -1438,8 +1569,8 @@ void main()
 		{
 			this.app = appInstance;
 
-			this.mode = this.app.settings.get( 'router.mode', 'url' );
-			this.basePath = this.app.settings.get( 'router.basePath', null );
+			this.mode = this.app.config.get( 'router.mode', 'url' );
+			this.basePath = this.app.config.get( 'router.basePath', null );
 
 			this._routeActions = [];
 			this.isEnabled = false;
@@ -1479,12 +1610,13 @@ void main()
 			let sRoute = Helper.trim( route, '/' );
 			sRoute = '/' + sRoute;
 
-			if ( true === Helper.isClass( stateClass ) ) // @todo fix - this does not work for webpack in production mode && true === isClassChildOf( action, 'State' )  )
+			if ( true === Helper.isClass( stateClass ) )
 			{
-				if ( false === this.app.states.exists( stateClass.ID ) )
+				if ( false === this.app.stateManager.exists( stateClass.ID ) )
 				{
-					this.app.states.add( stateClass );
+					this.app.stateManager.add( stateClass );
 				}
+
 				this._routeActions.push(
 					{
 						"action" : stateClass.ID,
@@ -1507,9 +1639,9 @@ void main()
 				routeSplits = route.split( "?" );
 
 			route = routeSplits[ 0 ];
-			if ( routeSplits.length > 0 )
+			if ( routeSplits.length > 1 )
 			{
-				let sp = new URLSearchParams( routeSplits[ 0 ] );
+				let sp = new URLSearchParams( routeSplits[ 1 ] );
 				query = Object.fromEntries( sp.entries() );
 			}
 
@@ -1529,18 +1661,17 @@ void main()
 			// If it is default route
 			if ( null === routeData )
 			{
-				// @todo For later - check setting if default scene should be shown
-				if ( route === '/' )
+				this.app.dispatchCustomEvent(
+					CustomEvents.TYPE.ON_STATE_NOT_FOUND,
+					{
+						route: route
+					}
+				);
+
+				if ( null !== this.app.stateManager.stateNotFoundClass )
 				{
 					routeData = {
-						"routeAction" : States.DEFAULT_INDEX_STATE_ID,
-						"routeParams" : null
-					};
-				}
-				else if ( this.app.states.isNotFoundStateEnabled() )
-				{
-					routeData = {
-						"routeAction" : States.DEFAULT_NOT_FOUND_STATE_ID,
+						"routeAction" : this.app.stateManager.stateNotFoundClass.ID,
 						"routeParams" : null
 					};
 				}
@@ -1549,8 +1680,8 @@ void main()
 			return routeData;
 		}
 
-		createUrl( str ) {
-			// @todo Check whether its hash based routing or not
+		createUrl( str )
+		{
 			if ( this.mode === 'hash' )
 			{
 				return '#/' + Helper.trim( str, '/' );
@@ -1585,10 +1716,16 @@ void main()
 				// Fix to properly handle backbutton
 				window.addEventListener( 'popstate', ( e ) =>
 				{
+					this.app.dispatchCustomEvent(
+						CustomEvents.TYPE.POPSTATE,
+						{
+							originalEvent : e
+						}
+					);
 					this.processUrl();
 				});
 			}
-			else if ( this.mode = 'hash' )
+			else if ( this.mode === 'hash' )
 			{
 				window.addEventListener( 'hashchange', this.processHash.bind( this ) );
 			}
@@ -1608,7 +1745,7 @@ void main()
 			{
 				document.removeEventListener( 'click', this.processUrl.bind( this ) );
 			}
-			else if ( this.mode = 'hash' )
+			else if ( this.mode === 'hash' )
 			{
 				window.removeEventListener( 'hashchange', this.processHash.bind( this ) );
 			}
@@ -1623,7 +1760,7 @@ void main()
 			{
 				this.processUrl();
 			}
-			else if ( this.mode = 'hash' )
+			else if ( this.mode === 'hash' )
 			{
 				this.processHash();
 			}
@@ -1704,6 +1841,24 @@ void main()
 			}
 		}
 
+		/**
+		 * Update browser URL without triggering the processing
+		 *
+		 * @param {String} url - Sets the url part
+		 */
+		setUrl( url )
+		{
+			if ( 'hash' === this.mode )
+			{
+				location.hash = '/' + Helper.trim( url, '/' );
+
+			}
+			else if ( 'url' === this.mode )
+			{
+				window.history.replaceState( null, null, url );
+			}
+		}
+
 		resolveRoute( route )
 		{
 			let r = Helper.trim( route, '/#' );
@@ -1720,11 +1875,11 @@ void main()
 			{
 				if ( actionData && actionData.hasOwnProperty( 'routeAction' ) && actionData.hasOwnProperty( 'routeParams' ) )
 				{
-					let stateInstance = this.app.states.create(
+					let stateInstance = this.app.stateManager.create(
 						actionData.routeAction,
 						actionData.routeParams
 					);
-					await this.app.states.switchTo( stateInstance );
+					await this.app.stateManager.switchTo( stateInstance );
 				}
 				else
 				{
@@ -3293,11 +3448,6 @@ void main()
 
 	exports$1.name = _NAME;
 
-	/* istanbul ignore if */
-	if (typeof window != 'undefined') {
-		window.ejs = exports$1;
-	}
-
 	const compile = exports$1.compile;
 	const render = exports$1.render;
 
@@ -3314,6 +3464,7 @@ void main()
 		constructor( appInstance )
 		{
 			this.app = appInstance;
+			this.globalViewData = {};
 		}
 
 		/**
@@ -3407,6 +3558,19 @@ void main()
 			else
 			{
 				data[ '_lcd' ] = this.app.l18n.getDateTime.bind( this.app.l18n );
+			}
+
+			const gvdKeys = Object.keys( this.globalViewData );
+			for ( let gi = 0; gi < gvdKeys.length; gi++ )
+			{
+				if ( data.hasOwnProperty( gvdKeys[ gi ] ) )
+				{
+					console.warn( `The globalViewData entry ${gvdKeys[ gi ]} already exists in template data.` );
+				}
+				else
+				{
+					data[ gvdKeys[ gi ] ] = this.globalViewData[ gvdKeys[ gi ] ];
+				}
 			}
 
 			return data;
@@ -3532,7 +3696,7 @@ void main()
 
 		/**
 		 * Sets dictionary
-		 * @param {object=}  [dict={}] - Dictionary
+		 * @param {object=}  [dict={ defaultLang : { "langCode" : "translation", ... }, ... } ] - Dictionary
 		 */
 		setDictionary( dict = {} )
 		{
@@ -3544,7 +3708,7 @@ void main()
 		 * Add given translation object to dictionary
 		 *
 		 * @param {string} langCode - Langugae code (2 chars)
-		 * @param {object} translationObject - The translation object, simple key-value object
+		 * @param {object} translationObject - The translation object, simple key-value object, e.g. { 'Hello' : 'Hallo' }
 		 */
 		addTranslation( langCode, translationObject )
 		{
@@ -3558,7 +3722,14 @@ void main()
 				throw new Error( 'Invalid langCode: ' + langCode )
 			}
 
-			this.dictionary[ langCode ] = translationObject;
+			for ( const [ key, value ] of Object.entries( translationObject ) )
+			{
+				if ( false === this.dictionary.hasOwnProperty( key ) )
+				{
+					this.dictionary[ key ] = {};
+				}
+				this.dictionary[ key ][ langCode ] = value;
+			}
 		}
 
 		/**
@@ -3569,36 +3740,28 @@ void main()
 		 */
 		getLocale( key, params )
 		{
-			const defaultLanguage = this.defaultLanguage,
-				language = this.currentLanguage,
+			this.defaultLanguage;
+			const language = this.currentLanguage,
 				dictionary = this.dictionary;
 
-			if ( language && dictionary[ language ].hasOwnProperty( key ) )
+			let langEntry = null;
+
+			if ( dictionary.hasOwnProperty( key ) && dictionary[ key ].hasOwnProperty( language ) && typeof dictionary[ key ][ language ] === 'string' )
 			{
-				return dictionary[ language][ key ].replace(/{(\d+)}/g, function(match, number)
-				{
-					return typeof params[number] != 'undefined'
-						? params[number]
-						: match
-						;
-				});
-			}
-			else if ( defaultLanguage &&
-				dictionary.hasOwnProperty( defaultLanguage ) &&
-				dictionary[ defaultLanguage ].hasOwnProperty( key ) )
-			{
-				return dictionary[ defaultLanguage ][ key ].replace(/{(\d+)}/g, function(match, number)
-				{
-					return typeof params[number] != 'undefined'
-						? params[number]
-						: match
-						;
-				});
+				langEntry = dictionary[ key ][ language ];
 			}
 			else
 			{
-				return '###' + key + '###';
+				langEntry = key;
 			}
+
+			return langEntry.replace(/{(\d+)}/g, function(match, number)
+			{
+				return typeof params[number] != 'undefined'
+					? params[number]
+					: match
+					;
+			});
 		}
 
 		/**
@@ -3657,6 +3820,18 @@ void main()
 				throw new Error( 'Invalid langCode: ' + langCode )
 			}
 
+			if ( this.app )
+			{
+				this.app.dispatchCustomEvent(
+					CustomEvents.TYPE.BEFORE_LANGUAGE_SWITCH,
+					{
+						currentLanguage: this.currentLanguage,
+						newLanguage: langCode.toLowerCase()
+					}
+				);
+			}
+
+			const oldLanguage = this.currentLanguage;
 			this.currentLanguage = langCode.toLowerCase();
 			this._nf = new Intl.NumberFormat(
 				this.currentLanguage,
@@ -3666,6 +3841,17 @@ void main()
 				}
 			);
 			this._dtf = new Intl.DateTimeFormat( this.currentLanguage );
+
+			if ( this.app )
+			{
+				this.app.dispatchCustomEvent(
+					CustomEvents.TYPE.AFTER_LANGUAGE_SWITCH,
+					{
+						oldLanguage: oldLanguage,
+						currentLanguage: this.currentLanguage
+					}
+				);
+			}
 		}
 
 		/**
@@ -4844,9 +5030,9 @@ void main()
 		}
 	}
 
-	const VERSION = '0.9.8';
+	const VERSION = '1.0.0';
 
-	const DEFAULT_SETTINGS = {
+	const DEFAULT_CONFIG = {
 		"app" : {
 			"id" : null,
 			"title" : null,
@@ -4857,12 +5043,11 @@ void main()
 		},
 		"router" : {
 			"isEnabled" : true,
+			"mode" : "url",
 			"basePath" : null
 		},
-		"states" : {
-			"basePath" : "",
-			"useDefaultIndexState" : true,
-			"useDefaultNotFoundState" : true
+		"stateManager" : {
+			"notFoundState" : DefaultIndexState
 		}
 	};
 
@@ -4870,7 +5055,7 @@ void main()
 	 * App
 	 * The App class is the logical core unit of every InfrontJS application.
 	 */
-	class App
+	class App extends CustomEvents
 	{
 		static POOL = {};
 
@@ -4898,20 +5083,21 @@ void main()
 		/**
 		 * Create an app instance
 		 * @param {HTMLElement} [container=document.body] - The root container of the application.
-		 * @param {object=} settings - Application settings object.
-		 * @param {object=} settings.app - App settings.
+		 * @param {object=} config - Application configuration object.
+		 * @param {object=} config.app - App configuration.
 		 * @param {string|null} [settings.app.title=null] - App's title, if set it will be set to the title header value.
 		 * @param {string|null} [settings.app.id=null] - Unique id of app instance. If not set, it will be auto generated.
 		 */
-		constructor( container = null, settings = {} )
+		constructor( container = null, config = {} )
 		{
+			super();
+
 			this.container = container;
 
-			// @todo Replace spread logic with lodash merge function (inline)
-			this.settings = new PathObject( { ...DEFAULT_SETTINGS, ...settings } );
-			if ( null === this.settings.get( 'app.id', null ) )
+			this.config = new PathObject( Helper.deepMerge( DEFAULT_CONFIG, config ) );
+			if ( null === this.config.get( 'app.id', null ) )
 			{
-				this.settings.set( 'app.id', Helper.createUid() );
+				this.config.set( 'app.id', Helper.createUid() );
 			}
 
 			if ( typeof window === 'undefined'  )
@@ -4932,7 +5118,7 @@ void main()
 				this.container = customContainer;
 			}
 
-			this.container.setAttribute( 'data-ifjs-app-id', this.settings.get( 'app.id') );
+			this.container.setAttribute( 'data-ifjs-app-id', this.config.get( 'app.id') );
 
 			// Init core components
 			this.initRouter();
@@ -4943,10 +5129,12 @@ void main()
 			// Add app to global app pool
 			App.POOL[ this.uid ] = this;
 
-			if ( true === this.settings.get( 'app.sayHello' ) && console )
+			if ( true === this.config.get( 'app.sayHello' ) && console )
 			{
 				console && console.log( "%c»InfrontJS« Version " + VERSION, "font-family: monospace sans-serif; background-color: black; color: white;" );
 			}
+
+			this.dispatchCustomEvent( CustomEvents.TYPE.READY );
 		}
 
 		initL18n()
@@ -4956,7 +5144,7 @@ void main()
 		}
 		initStates()
 		{
-			this.states = new States( this );
+			this.stateManager = new StateManager( this );
 		}
 
 		initRouter()
@@ -4989,9 +5177,9 @@ void main()
 		 */
 		async run( route = null )
 		{
-			if ( this.settings.get( 'app.title' ) )
+			if ( this.config.get( 'app.title' ) )
 			{
-				this.view.setWindowTitle( this.settings.get( 'app.title' ) );
+				this.view.setWindowTitle( this.config.get( 'app.title' ) );
 			}
 
 			this.router.enable();
@@ -5017,59 +5205,18 @@ void main()
 	}
 
 	/**
-	 * Events
-	 * Super simple custom events
-	 *
-	 * @example
-	 * const events = new Events( this  );
-	 * this.emit( "ready", { detail : { ...} } );
-	 *
-	 */
-	class Events
-	{
-		constructor( host )
-		{
-			this.proxy = document.createDocumentFragment();
-			this.proxy.host = host;
-
-			["addEventListener", "dispatchEvent", "removeEventListener"].forEach(
-				this.delegate,
-				this
-			);
-
-			host.on = (eventName, func) =>
-			{
-				host.addEventListener(eventName, func);
-				return host;
-			};
-
-			host.emit = (eventName, options) =>
-			{
-				host.dispatchEvent(new CustomEvent(eventName, options));
-			};
-		}
-
-		delegate(method)
-		{
-			this.proxy.host[method] = this.proxy[method].bind(this.proxy);
-		}
-	}
-
-	/**
-	 * Http
-	 * Simple helper class for http client requests.
-	 *
-	 * Note: All http verb functions support callback and await mode.
+	 * RestApi
+	 * Utility class for REST Api development wraps native fetch internally.
 	 *
 	 * @example <caption>Using callbacks</caption>
-	 * const apiClient = new Http( 'https://api.example.com' );
-	 * apiClient.get( '/books', function( err, result ) { } );
+	 * const myRestApi = new RestApi( 'https://api.example.com' );
+	 * myRestApi.get( '/books', function( err, result ) { } );
 	 *
 	 * @example <caption>Using await</caption>
-	 * const apiClient = new Http( 'https://api.example.com' );
+	 * const myRestApi = new RestApi( 'https://api.example.com' );
 	 * try
 	 * {
-	 *     const result = await apiClient.get( '/books' );
+	 *     const result = await myRestApi.get( '/books' );
 	 * }
 	 * catch( e )
 	 * {
@@ -5077,163 +5224,7 @@ void main()
 	 * }
 	 *
 	 */
-	class Http
-	{
-		/**
-		 * Construcotr
-		 * @param {string} url - Base url
-		 * @param {object=} headers - Header data.
-		 */
-		constructor( url = '', headers = {} )
-		{
-			this.url = Helper.trim( url, '/' );
-			if ( this.url.length <= 1 )
-			{
-				throw new Error( 'No endpoint set.' );
-			}
-
-			this.headers = new Headers( headers );
-		}
-
-		/**
-		 * GET call
-		 * @param {string} endpoint - API endpoint
-		 * @param {function=} [cb=null] - Callback function
-		 * @returns {Promise<any|undefined>}
-		 */
-		async get( endpoint, cb = null )
-		{
-			let r = Helper.trim( endpoint, "/" ),
-				req = new Request( this.url + '/' + r, this._createFetchOptions( "GET" ) );
-
-			return await this._fetch( req, cb );
-		}
-
-		/**
-		 * POST call
-		 * @param {string} endpoint - API endpoint
-		 * @param {object=} [data={}] - Post data
-		 * @param {function=} [cb=null] - Callback function
-		 * @returns {Promise<any|undefined>}
-		 */
-		async post( endpoint, data = {}, cb = null )
-		{
-			let r = Helper.trim( endpoint, "/" ),
-				req = new Request( this.url + '/' + r, this._createFetchOptions( "POST", data ) );
-			return await this._fetch( req, cb );
-		}
-
-		/**
-		 * DELETE call
-		 * @param {string} endpoint - API endpoint
-		 * @param {function=} [cb=null] - Callback function
-		 * @returns {Promise<any|undefined>}
-		 */
-		async delete( endpoint, cb = null )
-		{
-			let r = Helper.trim( endpoint, "/" ),
-				req = new Request( this.url + '/' + r,  this._createFetchOptions( "DELETE" ) );
-			return await this._fetch( req, cb );
-		}
-
-		/**
-		 * PUT call
-		 * @param {string} endpoint - API endpoint
-		 * @param {object=} [data={}] - PUT data
-		 * @param {function=} [cb=null] - Callback function
-		 * @returns {Promise<any|undefined>}
-		 */
-		async put( endpoint, data = {}, cb = null )
-		{
-			let r = Helper.trim( endpoint, "/" ),
-				req = new Request( this.url + '/' + r, this._createFetchOptions( "PUT", data )  );
-			return await this._fetch( req, cb );
-		}
-
-		/**
-		 * PATCH call
-		 * @param {string} endpoint - API endpoint
-		 * @param {object=} [data={}] - Patch data
-		 * @param {function=} [cb=null] - Callback function
-		 * @returns {Promise<any|undefined>}
-		 */
-		async patch( endpoint, data = {}, cb = null )
-		{
-			let r = Helper.trim( endpoint, "/" ),
-				req = new Request( this.url + '/' + r, this._createFetchOptions( "PATCH", data ) );
-			return await this._fetch( req, cb );
-		}
-
-		async _fetch( req, cb = null )
-		{
-			if ( cb )
-			{
-				fetch( req )
-					.then( response => response.json() )
-					.then( json => cb( null, json ) )
-					.catch( error => cb( error, null ) );
-			}
-			else
-			{
-				try
-				{
-					const response = await fetch( req );
-					let json = null;
-					try {
-						json = await response.json();
-					}
-					catch ( jsonErr )
-					{
-						json = null;
-					}
-					return {
-						status : response.status,
-						json
-					};
-				}
-				catch( err )
-				{
-					console.error( err );
-					return null;
-				}
-			}
-		}
-
-		_createFetchOptions( method, data = null )
-		{
-			const opts = {
-				"method" : method.toUpperCase(),
-				"headers" : this.headers
-			};
-			if ( Helper.isPlainObject( data ) )
-			{
-				opts.body = JSON.stringify( data );
-			}
-			return opts;
-		}
-	}
-
-	/**
-	 * Fetcher
-	 * Wrapper of the native Fetch API
-	 *
-	 * @example <caption>Using callbacks</caption>
-	 * const fetcher = new Fetcher( 'https://api.example.com' );
-	 * fetcher.get( '/books', function( err, result ) { } );
-	 *
-	 * @example <caption>Using await</caption>
-	 * const fetcher = new Fetcher( 'https://api.example.com' );
-	 * try
-	 * {
-	 *     const result = await fetcher.get( '/books' );
-	 * }
-	 * catch( e )
-	 * {
-	 *     // Handle error
-	 * }
-	 *
-	 */
-	class Fetcher
+	class RestApi
 	{
 		/**
 		 * Construcotr
@@ -5370,16 +5361,15 @@ void main()
 	}
 
 	exports.App = App;
-	exports.Events = Events;
-	exports.Fetcher = Fetcher;
+	exports.CustomEvents = CustomEvents;
 	exports.Helper = Helper;
-	exports.Http = Http;
 	exports.L18n = L18n;
 	exports.PathObject = PathObject;
+	exports.RestApi = RestApi;
 	exports.RouteParams = RouteParams;
 	exports.Router = Router;
 	exports.State = State;
-	exports.States = States;
+	exports.StateManager = StateManager;
 	exports.View = View;
 
 	Object.defineProperty(exports, '__esModule', { value: true });

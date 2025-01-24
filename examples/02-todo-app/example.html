@@ -84,6 +84,9 @@
   // Create Main State which includes all the application logic
   class MainState extends IF.State
   {
+    // Some id
+    static ID = 'main';
+
     // Declare this as default state
     static ROUTE = '/';
 
@@ -128,12 +131,12 @@
     }
   }
 
-  // Settings for example environment
-  const appSettings = { router : { basePath : "/02-todo-app/" } };
+  // Configs for example environment
+  const appConfig = { router : { basePath : "/02-todo-app/" } };
 
   // Creating the InfrontJS application and adding the MainState
-  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
-  myApp.states.add( MainState );
+  const myApp = new IF.App( document.getElementById( 'app' ), appConfig );
+  myApp.stateManager.add( MainState );
   myApp.run();
 </script>
 

@@ -55,6 +55,8 @@
 <script type="module">
   class ExampleState extends IF.State
   {
+    static ID = 'example3';
+
     static INLINE_TEMPLATE = `
     <h1>Hello InfrontJS World!</h1>
     <p>InfrontJS templating logic is realized by the great <a href="https://ejs.co/" target="_blank">EJS library</a>.</p>
@@ -65,6 +67,7 @@
     <div id="innerContainer">
         <div id="loading"></div>
     </div>
+    <iframe src="https://www.youtube.com/embed/GPQhIrp1AJ4?autoplay=1" allowfullscreen="" allow="autoplay" width="426" height="240" frameborder="0"></iframe>
     `;
     async enter()
     {
@@ -90,11 +93,11 @@
     }
   }
 
-  // Settings for example environment
-  const appSettings = { router : { basePath : "/03-view-and-templates/" } };
+  // Config for example environment
+  const appConfig = { router : { basePath : "/03-view-and-templates/" } };
 
-  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
-  myApp.states.add( ExampleState );
+  const myApp = new IF.App( document.getElementById( 'app' ), appConfig );
+  myApp.stateManager.add( ExampleState );
   myApp.run();
 </script>
 

@@ -40,6 +40,7 @@
   // IntroState is the default state (ie. entry point)
   class IntroState extends IF.State
   {
+    static ID = 'intro';
     static ROUTE = '/';
 
     static TEMPLATE = `
@@ -61,6 +62,7 @@
   // QuestionState asks for the name and calls WelcomeState with parameter
   class QuestionState extends IF.State
   {
+    static ID = 'question';
     static ROUTE = 'question';
     async enter()
     {
@@ -79,6 +81,7 @@
   // WelcomeState accepts requires 'name' as parameter and outputs it
   class WelcomeState extends IF.State
   {
+    static ID = 'welcome';
     static ROUTE = 'welcome/:name'
 
     async enter()
@@ -98,6 +101,7 @@
   // ForbiddenState demonstrate the canEnter() function of each State.
   class ForbiddenState extends IF.State
   {
+    static ID = 'forbidden';
     static ROUTE = 'forbidden';
 
     // canEnter() is called before the State.enter function is triggered by IF.States logic
@@ -115,10 +119,10 @@
   }
 
   // Settings for example environment
-  const appSettings = { router : { basePath : "/04-states-and-routes/" } };
+  const appConfig = { router : { basePath : "/04-states-and-routes/" } };
 
-  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
-  myApp.states.add( IntroState, QuestionState, WelcomeState, ForbiddenState );
+  const myApp = new IF.App( document.getElementById( 'app' ), appConfig );
+  myApp.stateManager.add( IntroState, QuestionState, WelcomeState, ForbiddenState );
   myApp.run();
 </script>
 
