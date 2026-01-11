@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>03 – States Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header>
+    <nav>
+        <a href="#/">Home</a>
+        <a href="#/counter">Counter</a>
+        <a href="#/settings">Settings</a>
+    </nav>
+    <div class="row">
+        <span id="version" class="badge">InfrontJS: …</span>
+        <span id="active" class="badge">State: …</span>
+    </div>
+</header>
+
+<main>
+    <div id="app" class="card"></div>
+</main>
+
+<script type="module">
+    import * as IF from 'https://unpkg.com/infrontjs@1.0.1/dist/infrontjs.esm.js';
+    import { HomeState }  from './HomeState.js';
+    import { SettingsState } from './SettingsState.js';
+    import { CounterState } from './CounterState.js';
+    import { Store } from './Store.js';
+    // Create + run the app (hash routing required for online demos)
+    const app = new IF.App(document.querySelector('#app'), {
+        app: { title: 'InfrontJS – States Demo' },
+        router: { mode: 'hash' }
+    });
+    app.view.layout = function (title, bodyHtml) {
+        return `
+        <h1 style="margin:0 0 10px 0;">${title}</h1>
+        <div class="muted" style="margin-bottom: 10px;">A tiny InfrontJS demo with multiple states and shared data.</div>
+        <div class="hr"></div>
+        ${bodyHtml}
+      `;
+    };
+    app.stateManager.add(HomeState, CounterState, SettingsState);
+
+
+    // Nice little UI: show version + active state.
+    document.querySelector('#version').textContent = `InfrontJS: ${app.getVersion()}`;
+
+    app.addEventListener('beforeStateChange', (e) => {
+        // best-effort: event detail shape can vary; keep it defensive.
+        const next = e?.detail?.nextStateId || e?.detail?.to || '…';
+        document.querySelector('#active').textContent = `State: ${next}`;
+    });
+
+    app.addEventListener('afterStateChange', (e) => {
+        const current = e?.detail?.currentStateId || e?.detail?.to || '…';
+        document.querySelector('#active').textContent = `State: ${current}`;
+    });
+
+    await app.run();
+</script>
+</body>
+</html>

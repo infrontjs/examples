@@ -16,16 +16,12 @@
 </head>
 <body>
 
-<!-- Include InfrontJS library via unpkg -->
-<script src="./../IF.js"></script>
 <script type="module">
-  // Settings for example environment
-  const container = null;
-  const appConfig = { router : { basePath : "/01-most-minimal/" } };
+    // Stable, pinned version
+    import * as IF from "https://unpkg.com/infrontjs@1.0.1/dist/infrontjs.esm.js";
 
-  // Most minimal InfrontJS app showing the default scene (aka shameless plug)
-  const myApp = new IF.App( container, appConfig );
-  myApp.run();
+    const app = new IF.App(document.querySelector("body"), { "router": { "mode": "hash" } } );
+    app.run();
 </script>
 </body>
 </html>

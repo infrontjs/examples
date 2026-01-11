@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>04 - Three.js with Camera Views</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script type="module">
+    // Imports
+    import * as THREE from 'https://unpkg.com/three@latest/build/three.module.js';
+    import * as IF from "https://unpkg.com/infrontjs@1.0.1/dist/infrontjs.esm.js";
+
+    // Three.js scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+
+    // Create 3D objects
+    const geometry1 = new THREE.BoxGeometry(2, 2, 2);
+    const material1 = new THREE.MeshPhongMaterial({ color: 0x00ff88 });
+    const cube = new THREE.Mesh(geometry1, material1);
+    scene.add(cube);
+
+    const geometry2 = new THREE.TorusGeometry(1.5, 0.5, 16, 100);
+    const material2 = new THREE.MeshPhongMaterial({ color: 0xff6b6b });
+    const torus = new THREE.Mesh(geometry2, material2);
+    torus.position.set(3, 0, 0);
+    scene.add(torus);
+
+    const geometry3 = new THREE.SphereGeometry(1, 32, 32);
+    const material3 = new THREE.MeshPhongMaterial({ color: 0x4ecdc4 });
+    const sphere = new THREE.Mesh(geometry3, material3);
+    sphere.position.set(-3, 0, 0);
+    scene.add(sphere);
+
+    // Camera positions for different views
+    const cameraViews = {
+        front: { position: { x: 0, y: 0, z: 8 }, rotation: { x: 0, y: 0, z: 0 } },
+        top: { position: { x: 0, y: 10, z: 0 }, rotation: { x: -Math.PI / 2, y: 0, z: 0 } }
+    };
+
+    // Animation state
+    let targetCameraPos = { ...cameraViews.front.position };
+    let targetCameraRot = { ...cameraViews.front.rotation };
+    let currentCameraPos = { ...cameraViews.front.position };
+    let currentCameraRot = { ...cameraViews.front.rotation };
+
+    // Set initial camera position
+    camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+    camera.rotation.set(currentCameraRot.x, currentCameraRot.y, currentCameraRot.z);
+
+    // Define camera view substates
+    class FrontViewState extends IF.State {
+        static ID = 'front';
+
+        async enter() {
+            targetCameraPos = { ...cameraViews.front.position };
+            targetCameraRot = { ...cameraViews.front.rotation };
+        }
+    }
+
+    class TopViewState extends IF.State {
+        static ID = 'top';
+
+        async enter() {
+            targetCameraPos = { ...cameraViews.top.position };
+            targetCameraRot = { ...cameraViews.top.rotation };
+        }
+    }
+
+    // Main view state with camera view substates
+    class ViewState extends IF.State {
+        static ID = 'view';
+        static ROUTE = '/';
+
+        async enter() {
+            // Create substate manager for camera views
+            this.subStateManager = await this.createSubStateManager();
+            this.subStateManager.add(FrontViewState, TopViewState);
+
+            // Switch to front view by default
+            await this.switchToSubState('front');
+
+            // Create UI controls
+            const controlsDiv = document.createElement('div');
+            controlsDiv.style.position = 'absolute';
+            controlsDiv.style.top = '20px';
+            controlsDiv.style.left = '20px';
+            controlsDiv.style.zIndex = '1000';
+
+            const frontBtn = document.createElement('button');
+            frontBtn.textContent = 'Front View';
+            frontBtn.style.margin = '5px';
+            frontBtn.style.padding = '10px 20px';
+            frontBtn.style.cursor = 'pointer';
+            frontBtn.style.backgroundColor = '#00ff88';
+            frontBtn.style.border = 'none';
+            frontBtn.style.borderRadius = '5px';
+            frontBtn.style.fontWeight = 'bold';
+            frontBtn.onclick = () => this.switchToSubState('front');
+
+            const topBtn = document.createElement('button');
+            topBtn.textContent = 'Top View';
+            topBtn.style.margin = '5px';
+            topBtn.style.padding = '10px 20px';
+            topBtn.style.cursor = 'pointer';
+            topBtn.style.backgroundColor = '#4ecdc4';
+            topBtn.style.border = 'none';
+            topBtn.style.borderRadius = '5px';
+            topBtn.style.fontWeight = 'bold';
+            topBtn.onclick = () => this.switchToSubState('top');
+
+            controlsDiv.appendChild(frontBtn);
+            controlsDiv.appendChild(topBtn);
+            document.body.appendChild(controlsDiv);
+        }
+
+        async exit() {
+            // Clean up UI controls
+            const controlsDiv = document.querySelector('div[style*="position: absolute"]');
+            if (controlsDiv) {
+                controlsDiv.remove();
+            }
+        }
+    }
+
+    // Initialize app and add state
+    const app = new IF.App(document.querySelector("body"), { "router": { "mode": "hash" } });
+    app.stateManager.add(ViewState);
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Smooth camera transition (lerp)
+        const lerpFactor = 0.05;
+        currentCameraPos.x += (targetCameraPos.x - currentCameraPos.x) * lerpFactor;
+        currentCameraPos.y += (targetCameraPos.y - currentCameraPos.y) * lerpFactor;
+        currentCameraPos.z += (targetCameraPos.z - currentCameraPos.z) * lerpFactor;
+
+        currentCameraRot.x += (targetCameraRot.x - currentCameraRot.x) * lerpFactor;
+        currentCameraRot.y += (targetCameraRot.y - currentCameraRot.y) * lerpFactor;
+        currentCameraRot.z += (targetCameraRot.z - currentCameraRot.z) * lerpFactor;
+
+        camera.position.set(currentCameraPos.x, currentCameraPos.y, currentCameraPos.z);
+        camera.rotation.set(currentCameraRot.x, currentCameraRot.y, currentCameraRot.z);
+
+        // Rotate objects for visual interest
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        torus.rotation.x += 0.005;
+        torus.rotation.y += 0.01;
+        sphere.rotation.y += 0.005;
+
+        renderer.render(scene, camera);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Run app and start animation
+    await app.run();
+    animate();
+</script>
+</body>
+</html>
