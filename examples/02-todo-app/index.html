@@ -78,12 +78,16 @@
 <!-- App container -->
 <div id="app"></div>
 
-<!-- Include InfrontJS library via unpkg -->
-<script src="./../IF.js"></script>
 <script type="module">
-  // Create Main State which includes all the application logic
-  class MainState extends IF.State
-  {
+
+    import * as IF from "https://unpkg.com/infrontjs@1.0.1/dist/infrontjs.esm.js";
+
+    // Create Main State which includes all the application logic
+    class MainState extends IF.State
+    {
+    // Some id
+    static ID = 'main';
+
     // Declare this as default state
     static ROUTE = '/';
 
@@ -126,15 +130,12 @@
       // Optimized rendering using DOM diffing
       this.app.view.render( this.app.container, MainState.TMPL, { todos : this.todos } );
     }
-  }
+    }
 
-  // Settings for example environment
-  const appSettings = { router : { basePath : "/02-todo-app/" } };
-
-  // Creating the InfrontJS application and adding the MainState
-  const myApp = new IF.App( document.getElementById( 'app' ), appSettings );
-  myApp.states.add( MainState );
-  myApp.run();
+    // Configs for example environment
+    const app = new IF.App(document.querySelector("body"), { "router": { "mode": "hash" } } );
+    app.stateManager.add( MainState );
+    app.run();
 </script>
 
 </body>
